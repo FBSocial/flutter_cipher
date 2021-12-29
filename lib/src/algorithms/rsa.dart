@@ -2,48 +2,50 @@ part of flutter_cipher;
 
 /// Wraps the RSA Engine Algorithm.
 class RSA extends Asymmetric {
-  final RSAPublicKey publicKey;
-  final RSAPrivateKey privateKey;
+  final RSAPublicKey? publicKey;
+  final RSAPrivateKey? privateKey;
 
-  final PublicKeyParameter<RSAPublicKey> _publicKeyParams;
-  final PrivateKeyParameter<RSAPrivateKey> _privateKeyParameter;
+  final PublicKeyParameter<RSAPublicKey>? _publicKeyParams;
+  final PrivateKeyParameter<RSAPrivateKey>? _privateKeyParameter;
 
-  final AsymmetricBlockCipher _asymmetricBlockCipher = PKCS1Encoding(RSAEngine());
-
+  final AsymmetricBlockCipher _asymmetricBlockCipher =
+      PKCS1Encoding(RSAEngine());
 
   RSA({this.publicKey, this.privateKey})
-      : this._publicKeyParams = PublicKeyParameter(publicKey),
-        this._privateKeyParameter = PrivateKeyParameter(privateKey);
+      : this._publicKeyParams =
+            publicKey != null ? PublicKeyParameter(publicKey) : null,
+        this._privateKeyParameter =
+            privateKey != null ? PrivateKeyParameter(privateKey) : null;
 
   @override
-  String decryptPrivate(Encrypted encrypted, {IV iv}) {
+  String decryptPrivate(Encrypted encrypted, {IV? iv}) {
     if (privateKey == null) {
       throw StateError('Can\'t decrypt without a private key, null given.');
     }
 
     _asymmetricBlockCipher
       ..reset()
-      ..init(false, _privateKeyParameter);
+      ..init(false, _privateKeyParameter!);
 
     return convert.utf8.decode(_asymmetricBlockCipher.process(encrypted.bytes));
   }
 
   @override
-  String decryptPublic(Encrypted encrypted, {IV iv}) {
+  String decryptPublic(Encrypted encrypted, {IV? iv}) {
     if (publicKey == null) {
       throw StateError('Can\'t decrypt without a public key, null given.');
     }
 
     _asymmetricBlockCipher
       ..reset()
-      ..init(false, _publicKeyParams);
+      ..init(false, _publicKeyParams!);
 
     return convert.utf8.decode(_asymmetricBlockCipher.process(encrypted.bytes));
   }
 
   @override
-  Encrypted encryptPrivate(String input, {IV iv}) {
-    if (null == input || input.isEmpty) {
+  Encrypted encryptPrivate(String input, {IV? iv}) {
+    if (input.isEmpty) {
       throw StateError('The data cannot be null or empty.');
     }
 
@@ -53,15 +55,15 @@ class RSA extends Asymmetric {
 
     _asymmetricBlockCipher
       ..reset()
-      ..init(true, _privateKeyParameter);
+      ..init(true, _privateKeyParameter!);
 
-    return Encrypted(
-        _asymmetricBlockCipher.process(Uint8List.fromList(convert.utf8.encode(input))));
+    return Encrypted(_asymmetricBlockCipher
+        .process(Uint8List.fromList(convert.utf8.encode(input))));
   }
 
   @override
-  Encrypted encryptPublic(String input, {IV iv}) {
-    if (null == input || input.isEmpty) {
+  Encrypted encryptPublic(String input, {IV? iv}) {
+    if (input.isEmpty) {
       throw StateError('The data cannot be null or empty.');
     }
 
@@ -71,10 +73,10 @@ class RSA extends Asymmetric {
 
     _asymmetricBlockCipher
       ..reset()
-      ..init(true, _publicKeyParams);
+      ..init(true, _publicKeyParams!);
 
-    return Encrypted(
-        _asymmetricBlockCipher.process(Uint8List.fromList(convert.utf8.encode(input))));
+    return Encrypted(_asymmetricBlockCipher
+        .process(Uint8List.fromList(convert.utf8.encode(input))));
   }
 }
 
@@ -105,15 +107,15 @@ class RSAKeyParser {
   }
 
   RSAAsymmetricKey _parsePublic(ASN1Sequence sequence) {
-    final modulus = (sequence.elements[0] as ASN1Integer).valueAsBigInteger;
-    final exponent = (sequence.elements[1] as ASN1Integer).valueAsBigInteger;
+    final modulus = (sequence.elements[0] as ASN1Integer).valueAsBigInteger!;
+    final exponent = (sequence.elements[1] as ASN1Integer).valueAsBigInteger!;
 
     return RSAPublicKey(modulus, exponent);
   }
 
   RSAAsymmetricKey _parsePrivate(ASN1Sequence sequence) {
-    final modulus = (sequence.elements[1] as ASN1Integer).valueAsBigInteger;
-    final exponent = (sequence.elements[3] as ASN1Integer).valueAsBigInteger;
+    final modulus = (sequence.elements[1] as ASN1Integer).valueAsBigInteger!;
+    final exponent = (sequence.elements[3] as ASN1Integer).valueAsBigInteger!;
     final p = (sequence.elements[4] as ASN1Integer).valueAsBigInteger;
     final q = (sequence.elements[5] as ASN1Integer).valueAsBigInteger;
 
@@ -149,4 +151,3 @@ class RSAKeyParser {
     return parser.nextObject() as ASN1Sequence;
   }
 }
-
